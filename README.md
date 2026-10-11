@@ -1,6 +1,6 @@
 # Travel Planner using Graph & Dijkstra's Algorithm
 
-> **A Comprehensive Full-Stack Academic Web Application (BCA / B.Tech Data Structures & Algorithms Project)**  
+> **A Comprehensive Full-Stack Academic Web Application (BCA Data Structures & Algorithms Project)**  
 > Developed with **Python 3, Flask, SQLite, and Vanilla JavaScript/CSS** (No paid APIs or complex frontend frameworks).
 
 ---
