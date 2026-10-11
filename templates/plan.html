@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Travel Questionnaire - Plan Your Trip{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 40px; max-width: 900px;">
+    <div style="text-align: center; margin-bottom: 32px;">
+        <span class="badge badge-category" style="margin-bottom: 8px;">Feature 2 & 3: User Profiling</span>
+        <h1 style="font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
+            Personalized Travel Questionnaire
+        </h1>
+        <p style="color: #64748b; font-size: 1rem;">
+            Answer a few quick questions to let our transparent recommendation engine find and rank your ideal destinations.
+        </p>
+    </div>
+
+    <div class="form-card">
+        <form action="{{ url_for('plan.plan_trip') }}" method="POST">
+            <!-- 1. Current / Starting Location -->
+            <div class="form-group">
+                <label class="form-label" for="current_city">
+                    <i class="fa-solid fa-location-crosshairs text-primary"></i> Current / Starting Location
+                </label>
+                <span class="form-hint">Used by Dijkstra's shortest path algorithm and distance scoring.</span>
+                <select name="current_city" id="current_city" class="form-select">
+                    {% for city in city_names %}
+                        <option value="{{ city }}" {% if saved_prefs.get('current_city', 'Delhi') == city %}selected{% endif %}>
+                            {{ city }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 2. Previous Destinations Visited (Travel History) -->
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <label class="form-label">
+                        <i class="fa-solid fa-clock-rotate-left text-primary"></i> Previous Destinations Visited
+                    </label>
+                    <span id="visitedCountDisplay" style="font-size: 0.8rem; font-weight: 700; color: #2563eb;">0 selected</span>
+                </div>
+                <span class="form-hint">Click cities you have already traveled to. Our engine avoids duplicate trips and explores adjacent gateway hubs.</span>
+                <div class="chips-selector">
+                    {% for city in city_names %}
+                        <input type="checkbox" name="visited_destinations" value="{{ city }}" id="vis_{{ loop.index }}" class="chip-input"
+                               {% if city in saved_prefs.get('visited_destinations', []) %}checked{% endif %}>
+                        <label for="vis_{{ loop.index }}" class="chip-label">
+                            <i class="fa-solid fa-check" style="font-size: 0.75rem;"></i> {{ city }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 3. Preferred Travel Type / Interests -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fa-solid fa-heart text-primary"></i> Preferred Travel Types & Interests
+                </label>
+                <span class="form-hint">Select one or more categories that excite you.</span>
+                <div class="chips-selector">
+                    {% set categories = [
+                        ('Mountains', 'mountain'),
+                        ('Nature', 'tree'),
+                        ('Adventure', 'person-hiking'),
+                        ('Historical', 'monument'),
+                        ('Religious', 'om'),
+                        ('Cultural', 'masks-theater'),
+                        ('Wildlife', 'paw'),
+                        ('City/Urban', 'city'),
+                        ('Beaches', 'umbrella-beach')
+                    ] %}
+                    {% for cat_name, icon in categories %}
+                        <input type="checkbox" name="interests" value="{{ cat_name }}" id="cat_{{ loop.index }}" class="chip-input"
+                               {% if cat_name in saved_prefs.get('interests', ['Mountains', 'Nature']) %}checked{% endif %}>
+                        <label for="cat_{{ loop.index }}" class="chip-label">
+                            <i class="fa-solid fa-{{ icon }}" style="font-size: 0.85rem;"></i> {{ cat_name }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 4. Budget Range -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fa-solid fa-wallet text-primary"></i> Estimated Total Budget Range
+                </label>
+                <div class="card-options-grid">
+                    {% set budgets = [
+                        ('under_3000', 'Under ₹3,000', 'Backpacker / Day Trip', 'piggy-bank'),
+                        ('3000_5000', '₹3,000 - ₹5,000', 'Budget Explorer', 'wallet'),
+                        ('5000_10000', '₹5,000 - ₹10,000', 'Standard Weekend', 'money-bill-wave'),
+                        ('10000_20000', '₹10,000 - ₹20,000', 'Comfort Vacation', 'credit-card'),
+                        ('above_20000', '₹20,000+', 'Premium / Luxury', 'crown')
+                    ] %}
+                    {% for b_val, b_title, b_sub, b_icon in budgets %}
+                        <input type="radio" name="budget" value="{{ b_val }}" id="b_{{ loop.index }}" class="card-option-input"
+                               {% if saved_prefs.get('budget', '5000_10000') == b_val %}checked{% endif %}>
+                        <label for="b_{{ loop.index }}" class="card-option-label">
+                            <i class="fa-solid fa-{{ b_icon }}"></i>
+                            <span class="card-option-title">{{ b_title }}</span>
+                            <span class="card-option-sub">{{ b_sub }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 5. Trip Duration -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fa-regular fa-calendar-check text-primary"></i> Trip Duration
+                </label>
+                <div class="card-options-grid">
+                    {% set durations = [
+                        ('1_day', '1 Day', 'Quick Day Excursion'),
+                        ('2_3_days', '2 - 3 Days', 'Ideal Weekend Getaway'),
+                        ('4_5_days', '4 - 5 Days', 'Short Holiday'),
+                        ('6_7_days', '6 - 7 Days', 'Full Week Exploration'),
+                        ('above_7_days', '7+ Days', 'Extended Expedition')
+                    ] %}
+                    {% for d_val, d_title, d_sub in durations %}
+                        <input type="radio" name="duration" value="{{ d_val }}" id="d_{{ loop.index }}" class="card-option-input"
+                               {% if saved_prefs.get('duration', '2_3_days') == d_val %}checked{% endif %}>
+                        <label for="d_{{ loop.index }}" class="card-option-label">
+                            <i class="fa-regular fa-clock"></i>
+                            <span class="card-option-title">{{ d_title }}</span>
+                            <span class="card-option-sub">{{ d_sub }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 6. Travelling With -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fa-solid fa-users text-primary"></i> Travelling With
+                </label>
+                <div class="card-options-grid">
+                    {% set companions = [
+                        ('Solo', 'Solo', 'Independent Nomad', 'user'),
+                        ('Friends', 'Friends', 'Fun & Adventure', 'user-group'),
+                        ('Couple', 'Couple', 'Romantic Retreat', 'heart'),
+                        ('Family', 'Family', 'Comfort & Leisure', 'house-chimney-user')
+                    ] %}
+                    {% for c_val, c_title, c_sub, c_icon in companions %}
+                        <input type="radio" name="companion" value="{{ c_val }}" id="comp_{{ loop.index }}" class="card-option-input"
+                               {% if saved_prefs.get('companion', 'Friends') == c_val %}checked{% endif %}>
+                        <label for="comp_{{ loop.index }}" class="card-option-label">
+                            <i class="fa-solid fa-{{ c_icon }}"></i>
+                            <span class="card-option-title">{{ c_title }}</span>
+                            <span class="card-option-sub">{{ c_sub }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 7. Preferred Distance & Transport -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label class="form-label" for="distance">
+                        <i class="fa-solid fa-road text-primary"></i> Distance Preference
+                    </label>
+                    <select name="distance" id="distance" class="form-select">
+                        <option value="any" {% if saved_prefs.get('distance') == 'any' %}selected{% endif %}>Any Distance</option>
+                        <option value="within_100" {% if saved_prefs.get('distance') == 'within_100' %}selected{% endif %}>Within 100 km (Nearby)</option>
+                        <option value="within_300" {% if saved_prefs.get('distance') == 'within_300' %}selected{% endif %}>Within 300 km</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="transport">
+                        <i class="fa-solid fa-train text-primary"></i> Transport Preference
+                    </label>
+                    <select name="transport" id="transport" class="form-select">
+                        <option value="train" {% if saved_prefs.get('transport') == 'train' %}selected{% endif %}>Train (Economical & Scenic)</option>
+                        <option value="bus" {% if saved_prefs.get('transport') == 'bus' %}selected{% endif %}>Bus (Volvo / State)</option>
+                        <option value="car" {% if saved_prefs.get('transport') == 'car' %}selected{% endif %}>Car / Road Trip</option>
+                        <option value="any" {% if saved_prefs.get('transport') == 'any' %}selected{% endif %}>Any Mode</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+                <button type="submit" class="btn btn-primary btn-lg" style="min-width: 260px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Recommendations
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

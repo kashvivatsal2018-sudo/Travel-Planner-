@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Dijkstra Shortest Route Calculator - Travel Planner{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 36px;">
+    <!-- Route Planner Header -->
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 28px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <span class="badge badge-category" style="margin-bottom: 6px;">Feature 5 & 6: Graph & Dijkstra</span>
+                <h1 style="font-size: 1.85rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+                    Shortest Road Route Calculator
+                </h1>
+                <p style="color: #64748b; font-size: 0.92rem;">
+                    Finds the mathematically optimal highway route between cities using our manual Python min-heap Dijkstra algorithm.
+                </p>
+            </div>
+
+            <!-- Algorithm Spec Badge -->
+            <div style="background: #f1f5f9; padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; font-family: monospace;">
+                <div><span style="color: #2563eb; font-weight: bold;">Graph:</span> Adjacency List</div>
+                <div><span style="color: #059669; font-weight: bold;">Complexity:</span> O((V+E)logV)</div>
+            </div>
+        </div>
+
+        <!-- Route Selector Form -->
+        <form action="{{ url_for('main.route_planner') }}" method="GET" style="display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 12px; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="sourceCitySelect" style="font-size: 0.86rem;">
+                    <i class="fa-solid fa-circle-dot text-success"></i> Starting City (Source):
+                </label>
+                <select name="source" id="sourceCitySelect" class="form-select">
+                    {% for city in city_names %}
+                        <option value="{{ city }}" {% if source == city %}selected{% endif %}>{{ city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="button" id="swapCitiesBtn" class="btn btn-outline" style="height: 48px; width: 48px; padding: 0;" title="Swap Cities">
+                <i class="fa-solid fa-right-left"></i>
+            </button>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="destCitySelect" style="font-size: 0.86rem;">
+                    <i class="fa-solid fa-location-dot text-danger"></i> Destination City:
+                </label>
+                <select name="destination" id="destCitySelect" class="form-select">
+                    {% for city in city_names %}
+                        <option value="{{ city }}" {% if destination == city %}selected{% endif %}>{{ city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="height: 48px; min-width: 170px;">
+                <i class="fa-solid fa-play"></i> Find Route
+            </button>
+        </form>
+    </div>
+
+    {% if route_data %}
+        {% if route_data.success %}
+            <!-- Route Summary Banner -->
+            <div class="route-summary-banner">
+                <div>
+                    <span style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: #38bdf8; font-weight: 700;">
+                        Optimal Route via Dijkstra's Algorithm
+                    </span>
+                    <div class="route-breadcrumbs" style="margin-top: 6px;">
+                        {% for city in route_data.path %}
+                            <span>{{ city }}</span>
+                            {% if not loop.last %}
+                                <i class="fa-solid fa-chevron-right crumb-arrow"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="route-stat-box">
+                    <div class="route-stat-item">
+                        <h4>{{ route_data.total_distance }} km</h4>
+                        <p>Total Distance</p>
+                    </div>
+                    <div class="route-stat-item">
+                        <h4>{{ route_data.hop_count }}</h4>
+                        <p>Highway Legs</p>
+                    </div>
+                    <div class="route-stat-item">
+                        <h4>{{ (route_data.total_distance / 45.0)|round(1) }} hrs</h4>
+                        <p>Est. Drive Time</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map + Segments Grid -->
+            <div style="display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 24px; margin-bottom: 32px; align-items: start;">
+                <!-- Leaflet Interactive Map -->
+                <div>
+                    <div style="background: white; border-radius: 16px; padding: 12px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm);">
+                        <div id="map" data-waypoints='{{ route_data.waypoints|tojson }}'></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 8px 4px; font-size: 0.8rem; color: #64748b;">
+                            <div>
+                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981; margin-right: 4px;"></span> Origin (A) &nbsp;&bull;&nbsp;
+                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; margin-right: 4px;"></span> Destination (B) &nbsp;&bull;&nbsp;
+                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #2563eb; margin-right: 4px;"></span> Transit Waypoint
+                            </div>
+                            <div>Powered by OpenStreetMap</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Segments Breakdown -->
+                <div>
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: var(--shadow-sm);">
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 16px;">
+                            Road Segments & Distances
+                        </h3>
+
+                        {% if route_data.segments %}
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                {% for seg in route_data.segments %}
+                                    <div class="segment-step-card">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.78rem;">
+                                                {{ loop.index }}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 700; color: #0f172a; font-size: 0.92rem;">
+                                                    {{ seg.from }} &rarr; {{ seg.to }}
+                                                </div>
+                                                <div style="font-size: 0.76rem; color: #64748b;">
+                                                    Connecting Highway
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style="font-weight: 800; color: #2563eb; font-size: 0.95rem;">
+                                            {{ seg.distance }} km
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p style="color: #64748b; font-size: 0.88rem;">Origin and destination are identical. Distance is 0 km.</p>
+                        {% endif %}
+
+                        {% if target_destination %}
+                            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+                                <h4 style="font-size: 0.92rem; font-weight: 700; margin-bottom: 8px;">Arriving in {{ target_destination.name }}:</h4>
+                                <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 14px;">{{ target_destination.tagline }}</p>
+                                <a href="{{ url_for('main.destination_detail', dest_id=target_destination.id) }}" class="btn btn-outline-primary btn-primary-sm" style="width: 100%;">
+                                    <i class="fa-solid fa-compass"></i> Explore {{ target_destination.name }} Guide
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Viva Demonstration: Step-by-Step Dijkstra Relaxation Trace -->
+            <div style="margin-bottom: 40px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">Viva Academic Demonstration</span>
+                        <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 4px;">
+                            Dijkstra Algorithm Step-by-Step Execution Trace
+                        </h3>
+                    </div>
+                    <button type="button" id="toggleVivaTraceBtn" class="btn btn-outline-sm">
+                        <i class="fa-solid fa-terminal"></i> Show Dijkstra Execution Trace (Viva Examiner View)
+                    </button>
+                </div>
+
+                <div id="vivaTraceSection" style="display: none;">
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                        <p style="font-size: 0.85rem; color: #475569;">
+                            This trace logs each edge relaxation step during the priority-queue exploration.
+                            When a shorter path to a neighboring city is discovered, the tentative distance is updated (relaxed).
+                            Total Relaxation Steps logged: <strong>{{ route_data.relaxation_steps_count }}</strong> &bull;
+                            Cities visited: <strong>{{ route_data.visited_count }}</strong>
+                        </p>
+                    </div>
+
+                    <div class="viva-table-wrap">
+                        <table class="viva-table">
+                            <thead>
+                                <tr>
+                                    <th>Step #</th>
+                                    <th>Current Vertex (u)</th>
+                                    <th>Neighbor (v)</th>
+                                    <th>Edge Weight w(u,v)</th>
+                                    <th>Old Dist[v]</th>
+                                    <th>Tentative Dist (u+w)</th>
+                                    <th>Relaxation Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for step in route_data.relaxation_steps %}
+                                    <tr>
+                                        <td>#{{ step.step }}</td>
+                                        <td><strong>{{ step.current_node }}</strong></td>
+                                        <td>{{ step.neighbor }}</td>
+                                        <td>{{ step.edge_weight }} km</td>
+                                        <td>{{ step.old_distance }}</td>
+                                        <td><strong>{{ step.tentative_distance }} km</strong></td>
+                                        <td>
+                                            {% if step.relaxed %}
+                                                <span class="viva-badge-relaxed"><i class="fa-solid fa-check"></i> Relaxed & Updated</span>
+                                            {% else %}
+                                                <span class="viva-badge-not-relaxed">&times; No Update</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Integrated Destination Highlights (Feature 13 Requirement) -->
+            {% if target_destination %}
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; box-shadow: var(--shadow-sm); margin-bottom: 40px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <span class="section-tag">Feature 13 Integration</span>
+                            <h2 style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">
+                                Destination Highlights for {{ target_destination.name }}
+                            </h2>
+                        </div>
+                        <a href="{{ url_for('main.itinerary_page', destination=target_destination.name) }}" class="btn btn-primary-sm">
+                            <i class="fa-solid fa-calendar-days"></i> Generate Full Itinerary
+                        </a>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <!-- Top Attractions -->
+                        <div>
+                            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 12px;">
+                                <i class="fa-solid fa-landmark text-primary"></i> Top Attractions to Visit:
+                            </h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                {% for place in target_destination.tourist_places[:3] %}
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 0.9rem; color: #0f172a;">{{ place.name }}</div>
+                                            <div style="font-size: 0.76rem; color: #64748b;">{{ place.category }} &bull; {{ place.visit_duration }} hrs</div>
+                                        </div>
+                                        <span class="badge badge-rating"><i class="fa-solid fa-star"></i> {{ place.rating }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Top Restaurants -->
+                        <div>
+                            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 12px;">
+                                <i class="fa-solid fa-utensils text-accent"></i> Recommended Dining:
+                            </h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                {% for rest in target_destination.restaurants[:3] %}
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 0.9rem; color: #0f172a;">{{ rest.name }}</div>
+                                            <div style="font-size: 0.76rem; color: #64748b;">{{ rest.cuisine }} &bull; ₹{{ rest.avg_cost_per_person|int }} per person</div>
+                                        </div>
+                                        <span class="badge badge-rating"><i class="fa-solid fa-star"></i> {{ rest.rating }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Error State: Route Not Found -->
+            <div style="text-align: center; padding: 50px 20px; background: white; border-radius: 16px; border: 1px solid #fee2e2; margin-bottom: 30px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: #ef4444; margin-bottom: 16px;"></i>
+                <h3 style="color: #991b1b; font-size: 1.4rem; font-weight: 800; margin-bottom: 8px;">No Direct or Transit Route Found</h3>
+                <p style="color: #64748b; max-width: 500px; margin: 0 auto 20px;">
+                    {{ route_data.error or "The selected source and destination cities are not currently connected in the highway graph." }}
+                </p>
+                <a href="{{ url_for('main.route_planner', source='Delhi', destination='Mussoorie') }}" class="btn btn-primary">
+                    Try Delhi &rarr; Mussoorie
+                </a>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/route.js') }}"></script>
+{% endblock %}

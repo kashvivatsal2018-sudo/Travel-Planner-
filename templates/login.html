@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Travel Planner{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 50px; max-width: 480px;">
+    <div class="form-card" style="padding: 36px 32px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div class="logo-icon" style="margin: 0 auto 12px; width: 48px; height: 48px; font-size: 1.4rem;">
+                <i class="fa-solid fa-route"></i>
+            </div>
+            <h1 style="font-size: 1.7rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Welcome Back</h1>
+            <p style="color: #64748b; font-size: 0.9rem;">Sign in to save your travel profile and plans.</p>
+        </div>
+
+        <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST">
+            <div class="form-group">
+                <label class="form-label" for="username">Username:</label>
+                <input type="text" name="username" id="username" class="form-input" required placeholder="Enter username" value="{{ username or '' }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Password:</label>
+                <input type="password" name="password" id="password" class="form-input" required placeholder="Enter password">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </button>
+        </form>
+
+        <div style="margin: 20px 0; display: flex; align-items: center; text-align: center; color: #94a3b8; font-size: 0.82rem;">
+            <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+            <span style="padding: 0 12px;">OR</span>
+            <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+        </div>
+
+        <!-- One-Click Guest Mode -->
+        <a href="{{ url_for('auth.guest_login') }}" class="btn btn-outline" style="width: 100%; padding: 12px;">
+            <i class="fa-solid fa-user-ninja"></i> Continue as Guest (No Sign Up)
+        </a>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 0.88rem; color: #64748b;">
+            Don't have an account? <a href="{{ url_for('auth.register') }}" style="font-weight: 700;">Create Account</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

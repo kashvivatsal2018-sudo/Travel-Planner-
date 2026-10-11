@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Page Not Found{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 80px 20px; text-align: center; max-width: 600px;">
+    <div style="font-size: 5rem; font-weight: 800; color: #cbd5e1; line-height: 1; margin-bottom: 12px;">404</div>
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-bottom: 12px;">
+        Destination or Page Not Found
+    </h1>
+    <p style="color: #64748b; font-size: 1rem; margin-bottom: 24px;">
+        {{ error_message or "The page or destination you are searching for does not exist on our route map." }}
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+            <i class="fa-solid fa-house"></i> Return Home
+        </a>
+        <a href="{{ url_for('main.destinations') }}" class="btn btn-outline">
+            <i class="fa-solid fa-mountain-sun"></i> Explore Destinations
+        </a>
+    </div>
+</div>
+{% endblock %}

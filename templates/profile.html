@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}User Travel Profile - Travel Planner{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 36px; max-width: 860px;">
+    <!-- Profile Card -->
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px; margin-bottom: 28px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 800;">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div>
+                    <h1 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+                        {{ user.username if user else 'Guest Explorer' }}
+                    </h1>
+                    <span style="font-size: 0.85rem; color: #64748b;">
+                        {% if user %}
+                            Member Account &bull; {{ user.email or 'Personal Profile' }}
+                        {% else %}
+                            Guest Session (Preferences stored locally)
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div>
+                {% if not user %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-primary-sm">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In / Register
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-sm">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Section: Travel History (Feature 3) -->
+        <div style="margin-bottom: 32px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">
+                        <i class="fa-solid fa-clock-rotate-left text-primary"></i> Visited Travel History
+                    </h3>
+                    <p style="font-size: 0.86rem; color: #64748b;">
+                        Destinations you have already experienced. Used by our recommender to avoid repeat suggestions and discover connected gems.
+                    </p>
+                </div>
+                <span class="badge badge-visited">{{ visited|length }} Visited</span>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+                {% for city in visited %}
+                    <div style="background: #f3e8ff; color: #6b21a8; padding: 6px 14px; border-radius: 9999px; font-size: 0.86rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-check"></i> {{ city }}
+                    </div>
+                {% else %}
+                    <p style="color: #94a3b8; font-size: 0.9rem; font-style: italic;">
+                        No previous destinations added yet. Take the questionnaire to add your visited places!
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Section: Current Preferences -->
+        <div style="margin-bottom: 32px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">
+                    <i class="fa-solid fa-sliders text-secondary"></i> Saved Travel Criteria
+                </h3>
+                <a href="{{ url_for('plan.plan_trip') }}" class="btn btn-outline-sm">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                </a>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                    <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Interests</span>
+                    <div style="margin-top: 6px; font-weight: 700; color: #0f172a;">
+                        {{ (prefs.interests|join(', ')) if prefs.interests else 'Mountains, Nature' }}
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                    <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Budget Tier</span>
+                    <div style="margin-top: 6px; font-weight: 700; color: #0f172a;">
+                        {{ prefs.budget or '₹5,000 - ₹10,000' }}
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                    <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Duration</span>
+                    <div style="margin-top: 6px; font-weight: 700; color: #0f172a;">
+                        {{ prefs.duration or '2 - 3 Days' }}
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+                    <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Companions</span>
+                    <div style="margin-top: 6px; font-weight: 700; color: #0f172a;">
+                        {{ prefs.companion or 'Friends' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; padding-top: 10px;">
+            <a href="{{ url_for('plan.recommendations') }}" class="btn btn-primary btn-lg">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> View Personalized Recommendations
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

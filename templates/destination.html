@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}{{ destination.name }} - Destination Guide & Route Planner{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 30px;">
+    <!-- Destination Hero Banner -->
+    <div class="dest-hero-banner">
+        <img src="{{ destination.image_url }}" alt="{{ destination.name }}">
+        <div class="dest-hero-overlay">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <span class="badge badge-category">{{ destination.category }}</span>
+                <span class="badge badge-rating"><i class="fa-solid fa-star"></i> {{ destination.rating }} / 5.0</span>
+            </div>
+            <h1 style="font-size: 2.8rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px;">
+                {{ destination.name }}
+            </h1>
+            <p style="font-size: 1.1rem; opacity: 0.95; max-width: 700px; margin-bottom: 16px;">
+                {{ destination.tagline }}
+            </p>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.95rem; opacity: 0.9;">
+                <span><i class="fa-solid fa-clock"></i> Recommended: <strong>{{ destination.recommended_days }} Days</strong></span>
+                <span><i class="fa-solid fa-indian-rupee-sign"></i> Budget: <strong>₹{{ "{:,}".format(destination.avg_cost_min) }} - ₹{{ "{:,}".format(destination.avg_cost_max) }}</strong></span>
+                <span><i class="fa-solid fa-sun"></i> Best Season: <strong>{{ destination.best_time }}</strong></span>
+                <span><i class="fa-solid fa-location-dot"></i> Coordinates: {{ destination.latitude }}°N, {{ destination.longitude }}°E</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Navigation Bar -->
+    <div style="display: flex; gap: 14px; margin-bottom: 36px; flex-wrap: wrap; justify-content: space-between; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="#overview" class="btn btn-outline-sm"><i class="fa-solid fa-info-circle"></i> Overview</a>
+            <a href="#attractions" class="btn btn-outline-sm"><i class="fa-solid fa-landmark"></i> Attractions ({{ destination.tourist_places|length }})</a>
+            <a href="#restaurants" class="btn btn-outline-sm"><i class="fa-solid fa-utensils"></i> Food & Cafes ({{ destination.restaurants|length }})</a>
+            <a href="#budget" class="btn btn-outline-sm"><i class="fa-solid fa-calculator"></i> Budget Estimator</a>
+            <a href="#itinerary" class="btn btn-outline-sm"><i class="fa-solid fa-calendar-check"></i> Day-wise Itinerary</a>
+            <a href="#reviews" class="btn btn-outline-sm"><i class="fa-solid fa-comments"></i> Reviews ({{ destination.reviews|length }})</a>
+        </div>
+
+        <a href="{{ url_for('main.route_planner', source=default_source, destination=destination.name) }}" class="btn btn-primary">
+            <i class="fa-solid fa-route"></i> Calculate Dijkstra Route from {{ default_source }}
+        </a>
+    </div>
+
+    <!-- Section 1: Overview & Dijkstra Quick Route Finder -->
+    <div id="overview" style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 28px; margin-bottom: 40px; align-items: start;">
+        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; box-shadow: var(--shadow-sm);">
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a; margin-bottom: 12px;">
+                About {{ destination.name }}
+            </h2>
+            <p style="color: #475569; font-size: 1rem; line-height: 1.7; margin-bottom: 20px;">
+                {{ destination.description }}
+            </p>
+
+            <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">
+                Suitable For:
+            </h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                {% for comp in destination.get_suitable_companions() %}
+                    <span class="badge" style="background: #e0e7ff; color: #3730a3; padding: 6px 12px; font-size: 0.82rem; text-transform: none;">
+                        <i class="fa-solid fa-check"></i> {{ comp }} Travel
+                    </span>
+                {% endfor %}
+            </div>
+
+            <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">
+                Travel Themes:
+            </h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span class="badge badge-category">{{ destination.category }}</span>
+                {% for sc in destination.get_secondary_categories() %}
+                    <span class="badge" style="background: #f1f5f9; color: #475569;">{{ sc }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Integrated Dijkstra Route Launcher Box (Feature 13) -->
+        <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border-radius: 16px; padding: 28px; box-shadow: var(--shadow-md);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">Graph Integration</span>
+                <span style="font-size: 0.75rem; color: #94a3b8;"><i class="fa-solid fa-network-wired"></i> Adjacency List</span>
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 8px;">
+                Find Efficient Route to {{ destination.name }}
+            </h3>
+            <p style="font-size: 0.88rem; color: #94a3b8; margin-bottom: 20px;">
+                Execute Dijkstra's algorithm to compute the shortest road path from your location.
+            </p>
+
+            <form action="{{ url_for('main.route_planner') }}" method="GET">
+                <input type="hidden" name="destination" value="{{ destination.name }}">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label" style="color: #cbd5e1; font-size: 0.88rem;">Select Departure City:</label>
+                    <select name="source" class="form-select" style="background: #0f172a; border-color: #334155; color: white;">
+                        {% for city in all_cities %}
+                            {% if city != destination.name %}
+                                <option value="{{ city }}" {% if city == default_source %}selected{% endif %}>{{ city }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fa-solid fa-play"></i> Run Dijkstra & View Map
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section 2: Tourist Places & Attractions (Feature 8) -->
+    <div id="attractions" style="margin-bottom: 48px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px;">
+            <div>
+                <span class="section-tag">Feature 8</span>
+                <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a;">
+                    Top Tourist Attractions in {{ destination.name }}
+                </h2>
+            </div>
+            <span style="font-size: 0.9rem; color: #64748b;">{{ destination.tourist_places|length }} Points of Interest</span>
+        </div>
+
+        <div class="places-grid">
+            {% for place in destination.tourist_places %}
+                <div class="place-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <span class="badge badge-category">{{ place.category }}</span>
+                        <span class="badge badge-rating"><i class="fa-solid fa-star"></i> {{ place.rating }}</span>
+                    </div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
+                        {{ place.name }}
+                    </h3>
+                    <p style="font-size: 0.88rem; color: #64748b; line-height: 1.5; margin-bottom: 16px; flex: 1;">
+                        {{ place.description }}
+                    </p>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.84rem; color: #334155; padding-top: 12px; border-top: 1px solid #f1f5f9;">
+                        <span><i class="fa-regular fa-clock text-primary"></i> {{ place.visit_duration }} hrs</span>
+                        <span><i class="fa-solid fa-ticket text-secondary"></i> Entry: <strong>{% if place.entry_cost == 0 %}Free{% else %}₹{{ place.entry_cost|int }}{% endif %}</strong></span>
+                        <span><i class="fa-solid fa-sun text-accent"></i> {{ place.best_time_of_day }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Section 3: Recommended Food & Restaurants (Feature 9) -->
+    <div id="restaurants" style="margin-bottom: 48px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px;">
+            <div>
+                <span class="section-tag">Feature 9</span>
+                <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a;">
+                    Recommended Food & Local Dining
+                </h2>
+            </div>
+            <span style="font-size: 0.9rem; color: #64748b;">{{ destination.restaurants|length }} Curated Eateries</span>
+        </div>
+
+        <div class="restaurants-grid">
+            {% for rest in destination.restaurants %}
+                <div class="rest-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <span class="badge" style="background: #fef2f2; color: #991b1b;">{{ rest.cuisine }}</span>
+                        <span class="badge badge-rating"><i class="fa-solid fa-star"></i> {{ rest.rating }}</span>
+                    </div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+                        {{ rest.name }}
+                    </h3>
+                    <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 12px;">
+                        <i class="fa-solid fa-map-pin"></i> {{ rest.location }}
+                    </p>
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; flex: 1;">
+                        <span style="font-size: 0.78rem; font-weight: 700; color: #475569; display: block; text-transform: uppercase;">Must Try:</span>
+                        <span style="font-size: 0.86rem; color: #0f172a; font-weight: 600;">{{ rest.popular_dishes or 'Local specialties' }}</span>
+                    </div>
+                    <div style="font-size: 0.88rem; color: #334155; font-weight: 700; text-align: right;">
+                        ₹{{ rest.avg_cost_per_person|int }} per person
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Section 4: Dynamic Budget Calculator (Feature 11) -->
+    <div id="budget" style="margin-bottom: 48px;">
+        <span class="section-tag">Feature 11</span>
+        <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 18px;">
+            Dynamic Trip Budget Calculator
+        </h2>
+
+        <div class="budget-calculator-box">
+            <form id="budgetCalculatorForm">
+                <input type="hidden" id="budgetDestinationId" value="{{ destination.id }}">
+                <input type="hidden" id="budgetDistanceInput" value="250">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+                    <!-- Left: Control Sliders & Inputs -->
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label" for="budgetTravelersInput">Number of Travelers:</label>
+                            <input type="number" id="budgetTravelersInput" class="form-input" min="1" max="15" value="2">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="budgetDaysInput">Duration (Days):</label>
+                            <input type="number" id="budgetDaysInput" class="form-input" min="1" max="14" value="{{ destination.recommended_days }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Accommodation Comfort Level:</label>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                                <input type="radio" name="hotel_tier" value="budget" id="ht_b" class="card-option-input">
+                                <label for="ht_b" class="card-option-label" style="padding: 10px 6px;">
+                                    <span class="card-option-title">Budget</span>
+                                    <span class="card-option-sub">₹900/night</span>
+                                </label>
+                                <input type="radio" name="hotel_tier" value="standard" id="ht_s" class="card-option-input" checked>
+                                <label for="ht_s" class="card-option-label" style="padding: 10px 6px;">
+                                    <span class="card-option-title">Standard</span>
+                                    <span class="card-option-sub">₹2,200/night</span>
+                                </label>
+                                <input type="radio" name="hotel_tier" value="luxury" id="ht_l" class="card-option-input">
+                                <label for="ht_l" class="card-option-label" style="padding: 10px 6px;">
+                                    <span class="card-option-title">Luxury</span>
+                                    <span class="card-option-sub">₹5,500/night</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Food & Dining Preference:</label>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                                <input type="radio" name="food_tier" value="budget" id="ft_b" class="card-option-input">
+                                <label for="ft_b" class="card-option-label" style="padding: 10px 6px;">
+                                    <span class="card-option-title">Budget</span>
+                                    <span class="card-option-sub">₹350/day</span>
+                                </label>
+                                <input type="radio" name="food_tier" value="moderate" id="ft_m" class="card-option-input" checked>
+                                <label for="ft_m" class="card-option-label" style="padding: 10px 6px;">
+                                    <span class="card-option-title">Moderate</span>
+                                    <span class="card-option-sub">₹750/day</span>
+                                </label>
+                                <input type="radio" name="food_tier" value="premium" id="ft_p" class="card-option-input">
+                                <label for="ft_p" class="card-option-label" style="padding: 10px 6px;">
+                                    <span class="card-option-title">Premium</span>
+                                    <span class="card-option-sub">₹1,600/day</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="budgetTransportSelect">Transport Mode:</label>
+                            <select id="budgetTransportSelect" class="form-select">
+                                <option value="train" selected>Train (₹1.8 / km / person)</option>
+                                <option value="bus">Bus (₹2.2 / km / person)</option>
+                                <option value="car">Car (₹9.0 / km / vehicle)</option>
+                                <option value="flight">Flight / Premium (₹4.5 / km)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Real-Time Budget Summary -->
+                    <div>
+                        <div class="budget-total-banner">
+                            <p>Estimated Total Trip Cost</p>
+                            <h2 id="budgetTotalDisplay">₹{{ "{:,}".format(initial_budget.total_estimated_budget) }}</h2>
+                            <p id="budgetPerPersonDisplay">₹{{ "{:,}".format(initial_budget.cost_per_person) }} / traveler</p>
+                        </div>
+
+                        <div class="budget-breakdown-box">
+                            <div class="budget-breakdown-item">
+                                <div class="budget-row-label">
+                                    <span><i class="fa-solid fa-train text-primary"></i> Transportation</span>
+                                    <span id="costTransportDisplay">₹{{ "{:,}".format(initial_budget.breakdown.transportation) }}</span>
+                                </div>
+                                <div class="budget-progress-bar">
+                                    <div class="budget-progress-fill" id="barTransport" style="width: {{ initial_budget.percentages.transportation }}%; background: #2563eb;"></div>
+                                </div>
+                            </div>
+
+                            <div class="budget-breakdown-item">
+                                <div class="budget-row-label">
+                                    <span><i class="fa-solid fa-hotel text-secondary"></i> Accommodation</span>
+                                    <span id="costHotelDisplay">₹{{ "{:,}".format(initial_budget.breakdown.accommodation) }}</span>
+                                </div>
+                                <div class="budget-progress-bar">
+                                    <div class="budget-progress-fill" id="barHotel" style="width: {{ initial_budget.percentages.accommodation }}%; background: #0d9488;"></div>
+                                </div>
+                            </div>
+
+                            <div class="budget-breakdown-item">
+                                <div class="budget-row-label">
+                                    <span><i class="fa-solid fa-utensils text-accent"></i> Food & Dining</span>
+                                    <span id="costFoodDisplay">₹{{ "{:,}".format(initial_budget.breakdown.food) }}</span>
+                                </div>
+                                <div class="budget-progress-bar">
+                                    <div class="budget-progress-fill" id="barFood" style="width: {{ initial_budget.percentages.food }}%; background: #f59e0b;"></div>
+                                </div>
+                            </div>
+
+                            <div class="budget-breakdown-item">
+                                <div class="budget-row-label">
+                                    <span><i class="fa-solid fa-ticket text-danger"></i> Sightseeing & Activities</span>
+                                    <span id="costActivitiesDisplay">₹{{ "{:,}".format(initial_budget.breakdown.activities) }}</span>
+                                </div>
+                                <div class="budget-progress-bar">
+                                    <div class="budget-progress-fill" id="barActivities" style="width: {{ initial_budget.percentages.activities }}%; background: #ef4444;"></div>
+                                </div>
+                            </div>
+
+                            <div class="budget-breakdown-item">
+                                <div class="budget-row-label">
+                                    <span><i class="fa-solid fa-shield-halved" style="color: #64748b;"></i> Miscellaneous / Buffer (8%)</span>
+                                    <span id="costMiscDisplay">₹{{ "{:,}".format(initial_budget.breakdown.miscellaneous) }}</span>
+                                </div>
+                                <div class="budget-progress-bar">
+                                    <div class="budget-progress-fill" id="barMisc" style="width: {{ initial_budget.percentages.miscellaneous }}%; background: #64748b;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section 5: Dynamic Day-Wise Itinerary (Feature 12) -->
+    <div id="itinerary" style="margin-bottom: 48px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px;">
+            <div>
+                <span class="section-tag">Feature 12</span>
+                <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a;">
+                    Dynamic {{ initial_itinerary.planned_days }}-Day Itinerary for {{ destination.name }}
+                </h2>
+            </div>
+            <a href="{{ url_for('main.itinerary_page', destination=destination.name, days=destination.recommended_days) }}" class="btn btn-outline-primary btn-primary-sm">
+                <i class="fa-solid fa-expand"></i> Full Screen Itinerary
+            </a>
+        </div>
+
+        {% for day in initial_itinerary.days %}
+            <div class="itinerary-day-card">
+                <div class="itinerary-day-header">
+                    <h3>{{ day.title }}</h3>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: #059669;">
+                        Attraction Fees: ₹{{ day.day_entry_total|int }}
+                    </span>
+                </div>
+                <div class="timeline-slots">
+                    {% for slot in day.slots %}
+                        <div class="timeline-slot-item">
+                            <div class="timeline-slot-icon">
+                                {% if slot.type == 'attraction' %}
+                                    <i class="fa-solid fa-map-pin"></i>
+                                {% elif slot.type == 'dining' %}
+                                    <i class="fa-solid fa-utensils"></i>
+                                {% elif slot.type == 'logistics' %}
+                                    <i class="fa-solid fa-hotel"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-compass"></i>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-slot-content">
+                                <span class="slot-time">{{ slot.time }} &bull; {{ slot.period }}</span>
+                                <h4 class="slot-title">{{ slot.title }}</h4>
+                                <p class="slot-desc">{{ slot.description }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Section 6: Traveler Reviews (Feature 10) -->
+    <div id="reviews" style="margin-bottom: 48px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px;">
+            <div>
+                <span class="section-tag">Feature 10</span>
+                <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a;">
+                    Traveler Reviews & Experiences
+                </h2>
+            </div>
+            <span class="badge" style="background: #e2e8f0; color: #475569;">Project Seed Data</span>
+        </div>
+
+        <div class="reviews-grid">
+            {% for rev in destination.reviews %}
+                <div class="review-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 700; color: #0f172a; font-size: 0.95rem;">{{ rev.author_name }}</span>
+                        <span class="badge badge-rating"><i class="fa-solid fa-star"></i> {{ rev.rating }}/5</span>
+                    </div>
+                    <span style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 12px; display: block;">Traveled: {{ rev.travel_date }}</span>
+                    <p style="font-size: 0.9rem; color: #475569; line-height: 1.5; font-style: italic;">
+                        "{{ rev.review_text }}"
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/budget.js') }}"></script>
+{% endblock %}

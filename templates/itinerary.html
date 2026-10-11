@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Day-Wise Itinerary for {{ destination.name }} - Travel Planner{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 36px; max-width: 960px;">
+    <!-- Itinerary Controls & Header -->
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 28px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <span class="badge badge-category" style="margin-bottom: 6px;">Feature 12: Dynamic Itinerary</span>
+                <h1 style="font-size: 1.85rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+                    Customized Day-Wise Trip Itinerary
+                </h1>
+                <p style="color: #64748b; font-size: 0.92rem;">
+                    Dynamically constructed using database tourist places and local dining for {{ destination.name }}.
+                </p>
+            </div>
+
+            <button type="button" class="btn btn-outline" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> Print / Save Itinerary
+            </button>
+        </div>
+
+        <!-- Customizer Form -->
+        <form action="{{ url_for('main.itinerary_page') }}" method="GET" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 14px; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.86rem;">Select Destination:</label>
+                <select name="destination" class="form-select">
+                    {% for d in all_destinations %}
+                        <option value="{{ d.name }}" {% if destination.name == d.name %}selected{% endif %}>
+                            {{ d.name }} ({{ d.category }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.86rem;">Trip Duration:</label>
+                <select name="days" class="form-select">
+                    {% for d_count in [1, 2, 3, 4, 5, 6, 7] %}
+                        <option value="{{ d_count }}" {% if days == d_count %}selected{% endif %}>
+                            {{ d_count }} {% if d_count == 1 %}Day{% else %}Days{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="height: 48px;">
+                <i class="fa-solid fa-rotate"></i> Update Schedule
+            </button>
+        </form>
+    </div>
+
+    <!-- Summary Box -->
+    <div style="background: linear-gradient(135deg, #0d9488, #0f766e); color: white; border-radius: 16px; padding: 24px; margin-bottom: 30px; box-shadow: var(--shadow-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 4px;">{{ destination.name }} Expedition</h2>
+            <p style="opacity: 0.9; font-size: 0.9rem;">{{ destination.tagline }}</p>
+        </div>
+        <div style="display: flex; gap: 24px;">
+            <div style="text-align: right;">
+                <div style="font-size: 1.5rem; font-weight: 800;">{{ itinerary.planned_days }} Days</div>
+                <div style="font-size: 0.76rem; opacity: 0.85; text-transform: uppercase;">Duration</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.5rem; font-weight: 800;">₹{{ itinerary.total_estimated_attraction_cost|int }}</div>
+                <div style="font-size: 0.76rem; opacity: 0.85; text-transform: uppercase;">Total Attraction Fees</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline of Days -->
+    <div>
+        {% for day in itinerary.days %}
+            <div class="itinerary-day-card">
+                <div class="itinerary-day-header">
+                    <h3>{{ day.title }}</h3>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: #059669;">
+                        Sightseeing Cost: ₹{{ day.day_entry_total|int }}
+                    </span>
+                </div>
+
+                <div class="timeline-slots">
+                    {% for slot in day.slots %}
+                        <div class="timeline-slot-item">
+                            <div class="timeline-slot-icon">
+                                {% if slot.type == 'attraction' %}
+                                    <i class="fa-solid fa-map-pin"></i>
+                                {% elif slot.type == 'dining' %}
+                                    <i class="fa-solid fa-utensils"></i>
+                                {% elif slot.type == 'logistics' %}
+                                    <i class="fa-solid fa-hotel"></i>
+                                {% elif slot.type == 'leisure' %}
+                                    <i class="fa-solid fa-bag-shopping"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-compass"></i>
+                                {% endif %}
+                            </div>
+
+                            <div class="timeline-slot-content">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                                    <span class="slot-time">{{ slot.time }} &bull; {{ slot.period }}</span>
+                                    {% if slot.cost > 0 %}
+                                        <span style="font-size: 0.8rem; font-weight: 700; color: #059669;">
+                                            ₹{{ slot.cost|int }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <h4 class="slot-title">{{ slot.title }}</h4>
+                                <p class="slot-desc">{{ slot.description }}</p>
+
+                                {% if slot.rating %}
+                                    <div style="margin-top: 8px;">
+                                        <span class="badge badge-rating" style="font-size: 0.72rem;">
+                                            <i class="fa-solid fa-star"></i> {{ slot.rating }} Rating
+                                        </span>
+                                        {% if slot.duration_hours %}
+                                            <span style="font-size: 0.78rem; color: #64748b; margin-left: 8px;">
+                                                <i class="fa-regular fa-clock"></i> Duration: {{ slot.duration_hours }} hours
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div style="text-align: center; margin: 40px 0 20px;">
+        <a href="{{ url_for('main.route_planner', destination=destination.name) }}" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-route"></i> Calculate Shortest Route to {{ destination.name }}
+        </a>
+    </div>
+</div>
+{% endblock %}

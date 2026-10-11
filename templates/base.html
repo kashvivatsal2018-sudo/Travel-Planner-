@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Travel Planner - Smart Graph & Dijkstra Routing{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for OpenStreetMap Visualization -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Main Application Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header class="navbar-wrapper">
+        <nav class="navbar container">
+            <a href="{{ url_for('main.index') }}" class="brand-logo">
+                <div class="logo-icon"><i class="fa-solid fa-route"></i></div>
+                <div class="logo-text">
+                    <span class="logo-title">Travel<span>Planner</span></span>
+                    <span class="logo-tag">Graph & Dijkstra Engine</span>
+                </div>
+            </a>
+
+            <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle Navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <div class="nav-menu" id="navMenu">
+                <ul class="nav-links">
+                    <li><a href="{{ url_for('main.index') }}" class="nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+                    <li><a href="{{ url_for('plan.plan_trip') }}" class="nav-link"><i class="fa-solid fa-compass"></i> Plan Trip</a></li>
+                    <li><a href="{{ url_for('main.destinations') }}" class="nav-link"><i class="fa-solid fa-mountain-sun"></i> Destinations</a></li>
+                    <li><a href="{{ url_for('main.route_planner') }}" class="nav-link"><i class="fa-solid fa-map-location-dot"></i> Route (Dijkstra)</a></li>
+                    <li><a href="{{ url_for('main.itinerary_page') }}" class="nav-link"><i class="fa-solid fa-calendar-days"></i> Itinerary</a></li>
+                </ul>
+
+                <div class="nav-actions">
+                    {% if is_logged_in %}
+                        <a href="{{ url_for('plan.profile') }}" class="user-pill">
+                            <i class="fa-solid fa-user-circle"></i>
+                            <span>{{ current_user_name }}</span>
+                        </a>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-sm" title="Log out">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </a>
+                    {% else %}
+                        <div class="guest-indicator">
+                            <i class="fa-solid fa-circle-user"></i>
+                            <span>{{ current_user_name }}</span>
+                        </div>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-sm">Login</a>
+                        <a href="{{ url_for('plan.plan_trip') }}" class="btn btn-primary-sm">Plan Trip</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Flash Messages Container -->
+    <div class="container flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <div class="alert-icon">
+                            {% if category == 'success' %}
+                                <i class="fa-solid fa-circle-check"></i>
+                            {% elif category == 'danger' or category == 'error' %}
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% elif category == 'warning' %}
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                            {% else %}
+                                <i class="fa-solid fa-circle-info"></i>
+                            {% endif %}
+                        </div>
+                        <div class="alert-content">{{ message }}</div>
+                        <button class="alert-close" onclick="this.parentElement.remove();">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Page Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <div class="footer-col brand-col">
+                <div class="brand-logo footer-logo">
+                    <div class="logo-icon"><i class="fa-solid fa-route"></i></div>
+                    <span class="logo-title">Travel<span>Planner</span></span>
+                </div>
+                <p class="footer-desc">
+                    A comprehensive full-stack travel planning platform built with Python, Flask, and SQLite.
+                    Features manual Weighted Graph data structure, Dijkstra's algorithm for shortest road routing,
+                    and a transparent multi-factor recommendation engine.
+                </p>
+                <div class="academic-badge">
+                    <i class="fa-solid fa-graduation-cap"></i> BCA / B.Tech Data Structures & Algorithms Project
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Core Algorithms</h4>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('main.route_planner') }}"><i class="fa-solid fa-diagram-project"></i> Weighted Graph (Adjacency List)</a></li>
+                    <li><a href="{{ url_for('main.route_planner') }}"><i class="fa-solid fa-network-wired"></i> Dijkstra's Shortest Path Algorithm</a></li>
+                    <li><a href="{{ url_for('plan.plan_trip') }}"><i class="fa-solid fa-sliders"></i> Content-Based Recommendation</a></li>
+                    <li><a href="{{ url_for('main.itinerary_page') }}"><i class="fa-solid fa-clock"></i> Dynamic Day-Wise Scheduler</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Quick Navigation</h4>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('main.index') }}">Home Landing Page</a></li>
+                    <li><a href="{{ url_for('plan.plan_trip') }}">Travel Questionnaire</a></li>
+                    <li><a href="{{ url_for('main.destinations') }}">Explore Destinations</a></li>
+                    <li><a href="{{ url_for('main.route_planner') }}">Route & Distance Finder</a></li>
+                    <li><a href="{{ url_for('plan.profile') }}">Travel History & Profile</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Project Information</h4>
+                <div class="tech-stack-pills">
+                    <span class="tech-pill">Python 3</span>
+                    <span class="tech-pill">Flask</span>
+                    <span class="tech-pill">SQLite</span>
+                    <span class="tech-pill">Leaflet.js</span>
+                    <span class="tech-pill">Min-Heap O((V+E)logV)</span>
+                    <span class="tech-pill">No Paid APIs</span>
+                </div>
+                <p class="data-notice">
+                    <i class="fa-solid fa-circle-check text-success"></i> All road networks, attractions, and reviews run on local seed data.
+                </p>
+            </div>
+        </div>
+        <div class="footer-bottom container">
+            <p>&copy; 2026 Travel Planner. Designed for Academic Demonstration & Project Viva.</p>
+            <div class="viva-indicator">
+                <span class="status-dot"></span> Live Graph & Dijkstra Engine Active
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS for OpenStreetMap -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Main JS Application -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Travel Planner - Intelligent Routing & Recommendation{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container hero-grid">
+        <div class="hero-left">
+            <div class="hero-badge">
+                <i class="fa-solid fa-code-branch"></i> Academic DSA Project &bull; Dijkstra's Algorithm
+            </div>
+            <h1 class="hero-title">
+                Smart Travel Planning Powered by <span>Graph Theory</span>
+            </h1>
+            <p class="hero-subtitle">
+                Discover your next getaway with our content-based recommendation engine,
+                compute mathematically optimal road paths via <strong>Dijkstra's shortest path algorithm</strong>,
+                and generate instant budget breakdowns and dynamic day-wise itineraries.
+            </p>
+
+            <div class="hero-actions">
+                <a href="{{ url_for('plan.plan_trip') }}" class="btn btn-primary btn-lg">
+                    <i class="fa-solid fa-compass"></i> Plan My Trip
+                </a>
+                <a href="{{ url_for('main.destinations') }}" class="btn btn-outline btn-lg">
+                    <i class="fa-solid fa-mountain-sun"></i> Explore Destinations
+                </a>
+                <a href="{{ url_for('main.route_planner') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="fa-solid fa-route"></i> Route Planner
+                </a>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <h3>{{ total_cities }}+</h3>
+                    <p>Destinations</p>
+                </div>
+                <div class="stat-item">
+                    <h3>{{ total_routes }}+</h3>
+                    <p>Highway Edges</p>
+                </div>
+                <div class="stat-item">
+                    <h3>O((V+E)logV)</h3>
+                    <p>Dijkstra Efficiency</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-right">
+            <div class="hero-card">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                    <span class="badge badge-category">Algorithm Demonstration</span>
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #10b981;">
+                        <i class="fa-solid fa-circle-check"></i> Min-Heap Engine
+                    </span>
+                </div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
+                    Live Shortest Route Solver
+                </h3>
+                <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 12px;">
+                    Calculates exact road distance between cities using an adjacency list weighted graph and manual priority queue relaxation.
+                </p>
+
+                <div class="dijkstra-demo-box">
+                    <div>// Live Route Demo from Adjacency List:</div>
+                    <div>Source: <span class="highlight">Dehradun</span></div>
+                    <div>Destination: <span class="highlight">Dhanaulti</span></div>
+                    <div style="margin-top: 6px; color: #94a3b8;">&gt; Running Dijkstra shortest path...</div>
+                    <div style="color: #4ade80; margin-top: 4px;">
+                        Path: Dehradun &rarr; Mussoorie &rarr; Dhanaulti
+                    </div>
+                    <div class="cost">Total Road Distance: 95.0 km</div>
+                </div>
+
+                <div style="margin-top: 18px; display: flex; gap: 10px;">
+                    <a href="{{ url_for('main.route_planner', source='Dehradun', destination='Dhanaulti') }}" class="btn btn-primary-sm" style="flex: 1;">
+                        <i class="fa-solid fa-play"></i> Run Dijkstra Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">System Architecture</span>
+            <h2 class="section-title">How the Travel Planner Works</h2>
+            <p class="section-desc">
+                From user questionnaire to Dijkstra graph pathfinding and dynamic day-by-day scheduling.
+            </p>
+        </div>
+
+        <div class="workflow-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3 class="step-title">User Questionnaire</h3>
+                <p class="step-desc">Input travel history, interest categories, budget limit, duration, and travel companions.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3 class="step-title">Recommendation Engine</h3>
+                <p class="step-desc">Rule-based scoring ranks destinations with explicit "Why this was recommended" justifications.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Dijkstra Shortest Path</h3>
+                <p class="step-desc">Manual Python min-heap priority queue calculates mathematically optimal road routes and distances.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h3 class="step-title">Interactive Map</h3>
+                <p class="step-desc">Leaflet and OpenStreetMap render route polylines and waypoint pins without paid API keys.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">5</div>
+                <h3 class="step-title">Budget & Itinerary</h3>
+                <p class="step-desc">Dynamic expense breakdown and automated day-by-day itinerary synthesized from database attractions.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Destinations Section -->
+<section class="section" style="background: #f1f5f9; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">Explore Top Destinations</span>
+            <h2 class="section-title">Curated Indian Gateways</h2>
+            <p class="section-desc">
+                From serene Himalayan peaks to cultural royal palaces and river thrill hubs.
+            </p>
+        </div>
+
+        <div class="destinations-grid">
+            {% for dest in featured %}
+                <div class="dest-card">
+                    <div class="dest-image-wrap">
+                        <img src="{{ dest.image_url }}" alt="{{ dest.name }}" class="dest-image" loading="lazy">
+                        <div class="dest-badge-top">
+                            <span class="badge badge-category">{{ dest.category }}</span>
+                        </div>
+                        <div class="dest-rating-pill">
+                            <i class="fa-solid fa-star"></i> {{ dest.rating }}
+                        </div>
+                    </div>
+                    <div class="dest-body">
+                        <h3 class="dest-title">{{ dest.name }}</h3>
+                        <p class="dest-tagline">{{ dest.tagline }}</p>
+                        <div class="dest-meta">
+                            <span><i class="fa-regular fa-clock"></i> {{ dest.recommended_days }} Days</span>
+                            <span><strong>₹{{ "{:,}".format(dest.avg_cost_min) }} - ₹{{ "{:,}".format(dest.avg_cost_max) }}</strong></span>
+                        </div>
+                    </div>
+                    <div class="dest-footer">
+                        <a href="{{ url_for('main.destination_detail', dest_id=dest.id) }}" class="btn btn-outline-primary btn-primary-sm">
+                            View Details
+                        </a>
+                        <a href="{{ url_for('main.route_planner', destination=dest.name) }}" class="btn btn-primary-sm">
+                            <i class="fa-solid fa-route"></i> Route
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div style="text-align: center; margin-top: 36px;">
+            <a href="{{ url_for('main.destinations') }}" class="btn btn-outline btn-lg">
+                View All 15 Destinations <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Academic DSA Callout Banner -->
+<section class="section">
+    <div class="container">
+        <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border-radius: 18px; padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 30px; align-items: center;">
+                <div>
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-bottom: 12px;">
+                        Viva & Academic Focus
+                    </span>
+                    <h2 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 14px;">
+                        Adjacency List + Dijkstra Min-Heap Implementation
+                    </h2>
+                    <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">
+                        In accordance with academic requirements, the graph and shortest path algorithms are
+                        written from scratch in pure Python (no NetworkX or external shortest-path blackboxes).
+                        Includes execution relaxation steps for viva presentation.
+                    </p>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <a href="{{ url_for('main.route_planner') }}" class="btn btn-primary">
+                            <i class="fa-solid fa-play"></i> Open Dijkstra Visualizer
+                        </a>
+                        <a href="{{ url_for('plan.plan_trip') }}" class="btn btn-outline" style="color: white; border-color: #475569;">
+                            <i class="fa-solid fa-sliders"></i> Test Recommendation Engine
+                        </a>
+                    </div>
+                </div>
+                <div style="background: #090d16; border: 1px solid #334155; border-radius: 12px; padding: 20px; font-family: monospace; font-size: 0.84rem; color: #e2e8f0;">
+                    <div style="color: #38bdf8; font-weight: bold;">// Complexity Specifications:</div>
+                    <div style="margin-top: 6px;">Graph: <span style="color: #4ade80;">Adjacency List G = (V, E)</span></div>
+                    <div>Space Complexity: <span style="color: #fbbf24;">O(|V| + |E|)</span></div>
+                    <div>Time Complexity: <span style="color: #fbbf24;">O((|V| + |E|) log |V|)</span></div>
+                    <div>Relaxation: <span style="color: #a78bfa;">tentative &lt; dist[v] &rarr; update</span></div>
+                    <div style="margin-top: 8px; color: #64748b;">// Live database edges loaded into memory</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

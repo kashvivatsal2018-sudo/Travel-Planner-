@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Recommended Destinations - Travel Planner{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 36px;">
+    <!-- Preferences Header -->
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 30px; box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <span class="badge badge-category" style="margin-bottom: 6px;">Recommendation Engine Output</span>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
+                Top Destinations Curated For You
+            </h1>
+            <p style="color: #64748b; font-size: 0.9rem;">
+                Ranked using multi-factor content scoring across your interests, budget tier, trip duration, and travel history.
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="{{ url_for('plan.plan_trip') }}" class="btn btn-outline-sm">
+                <i class="fa-solid fa-sliders"></i> Modify Preferences
+            </a>
+            <a href="{{ url_for('main.destinations') }}" class="btn btn-outline-primary btn-primary-sm">
+                <i class="fa-solid fa-list"></i> Browse All Cities
+            </a>
+        </div>
+    </div>
+
+    <!-- Active Filter Summary Pills -->
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; align-items: center;">
+        <span style="font-size: 0.84rem; font-weight: 700; color: #475569;">Profile Criteria:</span>
+        <span class="badge" style="background: #e2e8f0; color: #1e293b;">
+            <i class="fa-solid fa-wallet"></i> {{ budget_label }}
+        </span>
+        <span class="badge" style="background: #e2e8f0; color: #1e293b;">
+            <i class="fa-regular fa-clock"></i> {{ duration_label }}
+        </span>
+        <span class="badge" style="background: #e2e8f0; color: #1e293b;">
+            <i class="fa-solid fa-users"></i> {{ prefs.companion }}
+        </span>
+        <span class="badge" style="background: #e2e8f0; color: #1e293b;">
+            <i class="fa-solid fa-location-dot"></i> Starting from {{ prefs.current_city or 'Delhi' }}
+        </span>
+        {% for cat in prefs.interests %}
+            <span class="badge badge-category">{{ cat }}</span>
+        {% endfor %}
+    </div>
+
+    <!-- Recommendations Cards -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        {% for r in recommendations %}
+            <div class="recom-card">
+                <div class="recom-image-col">
+                    <img src="{{ r.image_url }}" alt="{{ r.name }}" loading="lazy">
+                    <div style="position: absolute; top: 12px; left: 12px;">
+                        <span class="badge badge-category">{{ r.category }}</span>
+                    </div>
+                    {% if r.is_previously_visited %}
+                        <div style="position: absolute; bottom: 12px; left: 12px;">
+                            <span class="badge badge-visited">
+                                <i class="fa-solid fa-check"></i> Visited Before
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="recom-content">
+                    <div class="recom-header">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                                <h2 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0;">
+                                    {{ loop.index }}. {{ r.name }}
+                                </h2>
+                                <span class="badge badge-rating">
+                                    <i class="fa-solid fa-star"></i> {{ r.rating }}
+                                </span>
+                            </div>
+                            <p style="font-size: 0.88rem; color: #64748b;">{{ r.tagline }}</p>
+                        </div>
+
+                        <!-- Match Score Badge -->
+                        <div style="text-align: right;">
+                            <span class="badge badge-score">
+                                <i class="fa-solid fa-bullseye"></i> {{ r.final_score }}% Match
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 24px; margin: 8px 0; font-size: 0.88rem; color: #334155; flex-wrap: wrap;">
+                        <span><i class="fa-solid fa-indian-rupee-sign text-primary"></i> Approx. <strong>₹{{ "{:,}".format(r.avg_cost_min) }} - ₹{{ "{:,}".format(r.avg_cost_max) }}</strong></span>
+                        <span><i class="fa-regular fa-calendar-days text-primary"></i> Recommended: <strong>{{ r.recommended_days }} Days</strong></span>
+                        <span><i class="fa-solid fa-sun text-accent"></i> Best Season: <strong>{{ r.best_time }}</strong></span>
+                    </div>
+
+                    <!-- Why Recommended (Feature 4 Requirement) -->
+                    <div class="recom-reasons-box">
+                        <h5><i class="fa-solid fa-circle-question"></i> Why Recommended for You:</h5>
+                        <ul class="recom-reasons-list">
+                            {% for reason in r.reasons %}
+                                <li><i class="fa-solid fa-check-circle"></i> {{ reason }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: auto; padding-top: 14px; border-top: 1px solid #f1f5f9; flex-wrap: wrap;">
+                        <a href="{{ url_for('main.destination_detail', dest_id=r.destination_id) }}" class="btn btn-outline-primary btn-primary-sm">
+                            <i class="fa-solid fa-circle-info"></i> View Destination Details
+                        </a>
+                        <a href="{{ url_for('main.route_planner', source=(prefs.current_city or 'Delhi'), destination=r.name) }}" class="btn btn-primary btn-primary-sm">
+                            <i class="fa-solid fa-route"></i> Calculate Dijkstra Route
+                        </a>
+                        <a href="{{ url_for('main.itinerary_page', destination=r.name, days=r.recommended_days) }}" class="btn btn-outline-sm">
+                            <i class="fa-solid fa-calendar-day"></i> View Itinerary
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px;">
+                <i class="fa-solid fa-compass" style="font-size: 3rem; color: #94a3b8; margin-bottom: 16px;"></i>
+                <h3>No destinations matched your strict criteria.</h3>
+                <p style="color: #64748b; margin-bottom: 20px;">Try broadening your budget or selecting "Any Distance".</p>
+                <a href="{{ url_for('plan.plan_trip') }}" class="btn btn-primary">Update Questionnaire</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

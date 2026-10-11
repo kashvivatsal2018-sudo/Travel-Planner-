@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Explore All Destinations - Travel Planner{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 36px;">
+    <div style="text-align: center; max-width: 650px; margin: 0 auto 30px;">
+        <span class="badge badge-category" style="margin-bottom: 8px;">Destination Directory</span>
+        <h1 style="font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
+            Explore All 15 Indian Destinations
+        </h1>
+        <p style="color: #64748b; font-size: 0.95rem;">
+            Discover diverse travel spots, local tourist attractions, top-rated culinary dining, and highway connections.
+        </p>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 32px; box-shadow: var(--shadow-sm);">
+        <form method="GET" action="{{ url_for('main.destinations') }}" style="display: flex; gap: 14px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 260px; position: relative;">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search by destination name, description, or scenery..." class="form-input" style="padding-left: 40px;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 15px; color: #94a3b8;"></i>
+            </div>
+
+            <div style="min-width: 180px;">
+                <select name="category" class="form-select" onchange="this.form.submit()">
+                    {% for cat in categories %}
+                        <option value="{{ cat.lower() }}" {% if selected_category == cat.lower() %}selected{% endif %}>
+                            {{ cat }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-filter"></i> Apply Filter
+            </button>
+            {% if search_query or (selected_category and selected_category != 'all') %}
+                <a href="{{ url_for('main.destinations') }}" class="btn btn-outline" title="Clear Filters">
+                    <i class="fa-solid fa-xmark"></i> Clear
+                </a>
+            {% endif %}
+        </form>
+
+        <!-- Category Quick Pills -->
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+            {% for cat in categories %}
+                <a href="{{ url_for('main.destinations', category=cat.lower(), q=search_query) }}"
+                   class="badge {% if selected_category == cat.lower() %}badge-score{% else %}badge-category{% endif %}"
+                   style="text-transform: none; padding: 6px 12px; font-size: 0.82rem; text-decoration: none;">
+                    {{ cat }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Destinations Grid -->
+    <div class="destinations-grid">
+        {% for dest in destinations %}
+            <div class="dest-card">
+                <div class="dest-image-wrap">
+                    <img src="{{ dest.image_url }}" alt="{{ dest.name }}" class="dest-image" loading="lazy">
+                    <div class="dest-badge-top">
+                        <span class="badge badge-category">{{ dest.category }}</span>
+                    </div>
+                    <div class="dest-rating-pill">
+                        <i class="fa-solid fa-star"></i> {{ dest.rating }}
+                    </div>
+                </div>
+                <div class="dest-body">
+                    <h3 class="dest-title">{{ dest.name }}</h3>
+                    <p class="dest-tagline">{{ dest.tagline }}</p>
+                    <div style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+                        {% for sc in dest.get_secondary_categories() %}
+                            <span style="font-size: 0.72rem; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
+                                #{{ sc }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                    <div class="dest-meta">
+                        <span><i class="fa-regular fa-clock"></i> {{ dest.recommended_days }} Days</span>
+                        <span><strong>₹{{ "{:,}".format(dest.avg_cost_min) }} - ₹{{ "{:,}".format(dest.avg_cost_max) }}</strong></span>
+                    </div>
+                </div>
+                <div class="dest-footer">
+                    <a href="{{ url_for('main.destination_detail', dest_id=dest.id) }}" class="btn btn-outline-primary btn-primary-sm">
+                        View Details
+                    </a>
+                    <a href="{{ url_for('main.route_planner', destination=dest.name) }}" class="btn btn-primary-sm">
+                        <i class="fa-solid fa-route"></i> Dijkstra Route
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 50px; background: white; border-radius: 16px;">
+                <p style="color: #64748b; font-size: 1.1rem;">No destinations match your search term.</p>
+                <a href="{{ url_for('main.destinations') }}" class="btn btn-primary-sm" style="margin-top: 12px;">Reset Filters</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
